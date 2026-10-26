@@ -31,7 +31,9 @@ def main():
         - Use the available tools to retrieve relevant information from the documents before answering.
         - Base your answer only on information retrieved using the tools.
         - You may use multiple tools if more context is needed.
-        - Cite the source and paragraph or article when available.
+        - Cite each claim with the paragraph or article of the fragment it comes from.
+        - Do not cite article or paragraph numbers, or give details, that are not in the retrieved fragments.
+        - For broad questions, run several searches (e.g. one per type of benefit).
         - Polish student slang may appear in questions. For example, "kolos" means "kolokwium/test", and "oblać" may mean "fail".
         - If the retrieved documents do not contain enough information, say:
         "W dokumentach nie ma wystarczających informacji".
@@ -64,12 +66,17 @@ def main():
                 }
             ]
             source_fragments = []
-
+            step = 0
             while True:
+                step += 1
+                use_tools = step <= 5
+                if not use_tools:
+                    messages.append({"role": "user", "content": "Odpowiedz teraz na podstawie zebranych fragmentów."})
                 response = chat(
-                    model="qwen2.5:7b",
+                    model="qwen3.5:35b",
                     messages = messages,
-                    tools = list(available_tools.values())
+                    tools = list(available_tools.values()) if use_tools else None,
+                    options = {"num_ctx": 32768}
                 )
 
                 messages.append(response.message)
@@ -93,7 +100,7 @@ def main():
                     for chunk in source_fragments:
                         unique_fragments[chunk["chunk_id"]] = chunk
 
-                    source_fragments = list(unique_fragments.values())[:15]
+                    source_fragments = list(unique_fragments.values())[-15:]
 
                     judge_result = judge_answer(
                         question=query,
@@ -128,17 +135,23 @@ def main():
                     if function is None:
                         result = f"Unknown tool: {function_name}"
                     else:
-                        result = function(**arguments)
+                        try:
+                            result = function(**arguments)
+                        except Exception as e:
+                            result = f"Tool error: {e}"
+                        if isinstance(result, dict):
+                            result = [result]
 
-                    if function_name in [
+                    if isinstance(result, list) and function_name in [
                         "search_vector",
                         "search_by_metadata",
-                        "get_neighboring_chunks"
+                        "get_neighboring_chunks",
+                        "get_chunk"
                     ]:
                         source_fragments.extend(result)
                         for chunk in result:
                             trace["retrieved_chunk_ids"].append(chunk["chunk_id"])
-                            trace["sources"].append(chunk["source"])
+                            trace["sources"].append(f'{chunk["source"]} {chunk.get("article") or chunk.get("paragraph") or ""}')
 
                     messages.append({
                         "role": "tool",

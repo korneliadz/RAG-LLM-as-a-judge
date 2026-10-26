@@ -1,0 +1,62 @@
+--- oryginał/rag.py
++++ poprawka/rag.py
+@@ -127,7 +127,7 @@
+             for index, chunk in enumerate(doc_chunks):
+                 chunk["chunk_index"] = index
+ 
+-        all_chunks.extend(doc_chunks)
++            all_chunks.extend(doc_chunks)
+                         
+         return all_chunks
+ 
+--- oryginał/ask.py
++++ poprawka/ask.py
+@@ -69,7 +69,8 @@
+                 response = chat(
+                     model="qwen3.5:35b",
+                     messages = messages,
+-                    tools = list(available_tools.values())
++                    tools = list(available_tools.values()),
++                    options = {"num_ctx": 16384, "temperature": 0}
+                 )
+ 
+                 messages.append(response.message)
+@@ -93,7 +94,7 @@
+                     for chunk in source_fragments:
+                         unique_fragments[chunk["chunk_id"]] = chunk
+ 
+-                    source_fragments = list(unique_fragments.values())[-15:]
++                    source_fragments = list(unique_fragments.values())[:15]
+ 
+                     judge_result = judge_answer(
+                         question=query,
+@@ -128,9 +129,14 @@
+                     if function is None:
+                         result = f"Unknown tool: {function_name}"
+                     else:
+-                        result = function(**arguments)
++                        try:
++                            result = function(**arguments)
++                        except Exception as e:
++                            result = f"Tool error: {e}"
++                        if isinstance(result, dict):
++                            result = [result]
+ 
+-                    if function_name in [
++                    if isinstance(result, list) and function_name in [
+                         "search_vector",
+                         "search_by_metadata",
+                         "get_neighboring_chunks",
+--- oryginał/judge.py
++++ poprawka/judge.py
+@@ -57,7 +57,8 @@
+                 "content": json.dumps(judge_input, ensure_ascii=False)
+             }
+         ],
+-        format="json"
++        format="json",
++        options={"num_ctx": 16384, "temperature": 0}
+     )
+ 
+     return json.loads(response.message.content)
+\ No newline at end of file

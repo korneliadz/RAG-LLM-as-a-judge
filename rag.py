@@ -3,6 +3,8 @@ from sentence_transformers import SentenceTransformer
 import weaviate
 import re
 
+from clean_regulamin import clean_regulamin
+
 class RAG:
     def __init__(
             self, 
@@ -83,6 +85,8 @@ class RAG:
                     full_text += txt + "\n"
 
             full_text = re.sub(r"\s+", " ", full_text)
+            if doc["document_type"] == "regulamin":
+                full_text = clean_regulamin(full_text)
 
             if doc["document_type"] == "regulamin":
                 sections = re.split(r"(?=§\s*\d+)", full_text)

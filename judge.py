@@ -57,7 +57,8 @@ def judge_answer(question, answer, source_fragments, trace):
                 "content": json.dumps(judge_input, ensure_ascii=False)
             }
         ],
-        format="json"
+        format="json",
+        options={"num_ctx": 32768, "temperature": 0}
     )
 
     return json.loads(response.message.content)

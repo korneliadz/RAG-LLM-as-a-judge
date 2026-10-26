@@ -34,10 +34,12 @@ class RAGTools:
         '''
         query_embedded = self.model.encode(query)
 
-        res = self.collection.query.near_vector(
-            near_vector=query_embedded,
+        res = self.collection.query.hybrid(
+            query=query,
+            vector=query_embedded.tolist(),
+            alpha=0.5,
             limit=top_k,
-            return_metadata=MetadataQuery(distance=True)
+            query_properties=["text"]
         )
 
         return [self._serialize_chunk(obj) for obj in res.objects]
@@ -58,7 +60,7 @@ class RAGTools:
         if res is None:
             return None
 
-        return res.properties["text"]
+        return self._serialize_chunk(res)
 
 
     def get_document(self, document_id: str):
@@ -92,11 +94,13 @@ class RAGTools:
 
     def get_neighboring_chunks(self, chunk_id: str, window: int):
         '''
-        Retrieves neighboring chunks around a specified chunk.
+        Retrieves chunks before and after a given chunk from the same document.
+        Use it when a retrieved fragment is cut off mid-sentence, starts in the middle
+        of a paragraph/article, or when you need the remaining ustępy of the same paragraph.
 
         Args:
-            chunk_id: The ID of the chunk.
-            window: Number of neighboring chunks on each side.
+            chunk_id: The chunk_id of a fragment returned by search_vector.
+            window: Number of neighboring chunks on each side (1-2 is usually enough).
 
         Returns:
             A list of neighboring chunks.
@@ -128,21 +132,23 @@ class RAGTools:
         value: str
         ):
         '''
-        Searches for chunks based on metadata.
+        Retrieves chunks of a specific paragraph or article by its number.
+        Use it when a fragment refers to another provision, e.g. "o którym mowa w § 22"
+        or "zgodnie z art. 93" - then fetch that provision directly.
 
         Args:
-            property_name: Metadata property to search by, for example
-                document_type, source, date or issuing_authority.
-            value: Value that the metadata property should have.
+            property_name: "paragraph" for the regulamin (e.g. value "§ 22") or
+                "article" for the ustawa (e.g. value "Art. 93").
+            value: The paragraph or article number, e.g. "§ 22" or "Art. 93".
 
         Returns:
-            A list of chunks matching the metadata.
+            A list of chunks of that provision.
         '''
         filters = Filter.by_property(property_name).equal(value)
 
         res = self.collection.query.fetch_objects(
             filters=filters,
-            limit=100
+            limit=10
         )
 
         return [self._serialize_chunk(obj) for obj in res.objects]

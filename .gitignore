@@ -1,12 +1,8 @@
 .venv/
-venv/
 __pycache__/
 *.pyc
-.env
 .DS_Store
-weaviate_data/
-*.pt
-*.pth
-*.bin
-.venv_old/
-*venv*/
+.ipynb_checkpoints/
+.venv*/
+venv/
+env/
