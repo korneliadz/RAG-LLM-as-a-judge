@@ -216,7 +216,7 @@ The most interesting part of the project was debugging it. Main problems found a
 ## Project Structure
 
 ```text
-Advanced-RAG/
+RAG-llm-as-a-judge/
 ├── compose.yml              # Weaviate service
 ├── requirements.txt
 ├── ask.py                   # interactive assistant: agent loop, trace, judge call
