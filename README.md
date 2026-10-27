@@ -6,7 +6,7 @@ Everything runs locally: Ollama for the language model, Weaviate in Docker for t
 
 # Quick Demo
 
-
+<img width="1206" height="719" alt="Screenshot 2026-10-27 at 01 13 19" src="https://github.com/user-attachments/assets/f123a58e-e709-4158-8d32-39148bbbd086" />
 
 ## Overview
 
@@ -17,7 +17,9 @@ The system currently works with two documents:
 - *Regulamin Studiów Politechniki Łódzkiej*: study regulations of Lodz University of Technology (consolidated text with amendments effective 1 October 2026)
 - *Prawo o szkolnictwie wyższym i nauce*: the Polish Law on Higher Education and Science
 
+The tool is built for these two documents and I use it myself to look up study rules. Preprocessing is tailored to their format (see Limitations). Supporting further documents is on the Roadmap.
 Questions can be asked in Polish, including student slang (e.g. "kolos" = test, "oblać" = fail).
+
 
 ## Key Features
 
@@ -324,7 +326,7 @@ Most of the latency comes from the agent loop, not from search: every tool round
 
 Planned next steps:
 
-- [ ] **Dynamic document loading without hardcoded paths**: scan `source-documents/` automatically and read metadata from a sidecar file (e.g. `documents.yaml`) or from the PDF itself, so adding a document requires no code changes.
+- [ ] **Dynamic document loading without hardcoded paths**: scan source-documents/ automatically and read metadata from a sidecar file (e.g. documents.yaml) or from the PDF itself, so adding a document requires no code changes. The metadata would also name the cleaning step for each document (e.g. "cleaner": "regulamin_pl"), and new PDFs would be checked for known patterns, such as "W tym brzmieniu obowiązuje do wejścia w życie zmiany", with a warning when a document probably needs cleaning.
 - [ ] **Configuration file / `.env`** for model names, `num_ctx`, Weaviate host and paths (`python-dotenv` is already a dependency).
 - [ ] **Incremental indexing**: hash each PDF and re-index only new or changed files.
 - [ ] **Evaluation set with reference answers** (question, expected answer, expected paragraph) to measure retrieval recall and answer accuracy, not just faithfulness.
